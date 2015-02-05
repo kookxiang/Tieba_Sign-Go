@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func GetTimestampStr() string{
-	return fmt.Sprintf("%d", time.Now().Unix());
+func GetTimestampStr() string {
+	return fmt.Sprintf("%d", time.Now().Unix())
 }
 
 func ToUtf8(gbkString string) string {

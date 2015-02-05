@@ -3,27 +3,27 @@ package main
 import (
 	. "./TiebaSign"
 	"fmt"
-	"time"
 	"io/ioutil"
+	"time"
 )
 
 func main() {
-	var username, password string;
+	var username, password string
 	fmt.Print("Enter your Baidu ID: ")
 	fmt.Scan(&username)
 	if username == "" {
-		return;
+		return
 	}
 	fmt.Print("Enter your Baidu Password: ")
 	fmt.Scan(&password)
 	if password == "" {
-		return;
+		return
 	}
 	result, loginErr := BaiduLogin(username, password)
 	if loginErr == nil && result > 0 {
 		fmt.Println("Successfully login")
-		cookieStr := "";
-		for _, cookie := range GetCookie(){
+		cookieStr := ""
+		for _, cookie := range GetCookie() {
 			cookieStr += cookie.Name + "=" + cookie.Value + "; "
 		}
 		ioutil.WriteFile("cookie.txt", []byte(cookieStr), 0644)

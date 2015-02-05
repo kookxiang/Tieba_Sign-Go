@@ -8,8 +8,8 @@ import (
 	"net/url"
 )
 
-var cookies []*http.Cookie;
-var cookieJar, _ = cookiejar.New(nil);
+var cookies []*http.Cookie
+var cookieJar, _ = cookiejar.New(nil)
 
 func Fetch(targetUrl string, postData map[string]string) (string, error) {
 	var request *http.Request
@@ -18,9 +18,9 @@ func Fetch(targetUrl string, postData map[string]string) (string, error) {
 	}
 	if nil == postData {
 		request, _ = http.NewRequest("GET", targetUrl, nil)
-	}else{
+	} else {
 		postParams := url.Values{}
-		for key, value := range postData{
+		for key, value := range postData {
 			postParams.Set(key, value)
 		}
 		postDataStr := postParams.Encode()
@@ -31,17 +31,17 @@ func Fetch(targetUrl string, postData map[string]string) (string, error) {
 	}
 	response, fetchError := httpClient.Do(request)
 	if fetchError != nil {
-		return "", fetchError;
+		return "", fetchError
 	}
 	defer response.Body.Close()
 	body, readError := ioutil.ReadAll(response.Body)
 	if readError != nil {
-		return "", readError;
+		return "", readError
 	}
-	cookies = cookieJar.Cookies(request.URL);
+	cookies = cookieJar.Cookies(request.URL)
 	return string(body), nil
 }
 
-func GetCookie() []*http.Cookie{
-	return cookies;
+func GetCookie() []*http.Cookie {
+	return cookies
 }
