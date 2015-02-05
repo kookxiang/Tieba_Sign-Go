@@ -32,12 +32,14 @@ func main() {
 		likedTiebaList, err := GetLikedTiebaList()
 		if err != nil {
 			fmt.Println(err)
-			return;
+			return
 		}
 		for _, tieba := range likedTiebaList {
 			status, message, exp := TiebaSign(tieba)
 			fmt.Printf("%s\t%d: %s\tEXP+%d\n", ToUtf8(tieba.Name), status, message, exp)
-			time.Sleep(1e9)
+			if exp > 0 || status == 1 {
+				time.Sleep(1e9)
+			}
 		}
 		time.Sleep(3e9)
 	} else {
