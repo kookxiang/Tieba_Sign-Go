@@ -24,7 +24,7 @@ func main() {
 		fmt.Println("Successfully login")
 		cookieStr := ""
 		for _, cookie := range GetCookie() {
-			cookieStr += cookie.Name + "=" + cookie.Value + "; "
+			cookieStr += cookie.Name + "=" + cookie.Value + "\n"
 		}
 		ioutil.WriteFile("cookie.txt", []byte(cookieStr), 0644)
 
