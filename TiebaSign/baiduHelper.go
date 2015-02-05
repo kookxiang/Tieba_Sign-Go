@@ -108,3 +108,27 @@ func BaiduLoginWithCaptcha (username, password, codeString, verifyCode, loginTok
 
 	return 1, nil;
 }
+
+func GetLikedTiebaList() (map[int]string, error) {
+	pn := 0
+	likedTiebaList := make([]LikedTieba, 0)
+	for {
+		pn++
+		url := "http://tieba.baidu.com/f/like/mylike?pn=" + fmt.Sprintf("%d", pn)
+		body, fetchErr := Fetch(url, nil)
+		if fetchErr != nil {
+			return nil, fetchErr
+		}
+		reg := regexp.MustCompile("<tr><td>.+?</tr>")
+		allTr := reg.FindAllString(body, -1)
+		for _, line := range allTr {
+			likedTieba, err := ParseLikedTieba(line)
+			if err != nil {
+				continue
+			}
+			likedTiebaList = append(likedTiebaList, likedTieba)
+		}
+		break
+	}
+	return nil, nil
+}

@@ -29,6 +29,7 @@ func main() {
 		ioutil.WriteFile("cookie.txt", []byte(cookieStr), 0644)
 
 		fmt.Println("Your cookie has been written into cookie.txt")
+		GetLikedTiebaList()
 		time.Sleep(2e9)
 	} else {
 		time.Sleep(5e9)
