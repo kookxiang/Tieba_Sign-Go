@@ -42,13 +42,13 @@ func Fetch(targetUrl string, postData map[string]string) (string, error) {
 	return string(body), nil
 }
 
-func GetCookie(name string) http.Cookie {
+func GetCookie(name string) string {
 	for _, cookie := range cookies {
 		if name == cookie.Name {
-			return cookie
+			return cookie.Value
 		}
 	}
-	return nil
+	return ""
 }
 
 func GetCookies() []*http.Cookie {
