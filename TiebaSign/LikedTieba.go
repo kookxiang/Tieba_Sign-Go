@@ -8,14 +8,14 @@ import (
 )
 
 type LikedTieba struct {
-	tiebaId     int
-	name        string
-	unicodeName string
-	exp         int
+	TiebaId     int
+	Name        string
+	UnicodeName string
+	Exp         int
 }
 
 func (tieba LikedTieba) String() string {
-	return fmt.Sprintf("%s (ID:%d, EXP:%d)", ToUtf8(tieba.name), tieba.tiebaId, tieba.exp)
+	return fmt.Sprintf("%s (ID:%d, EXP:%d)", ToUtf8(tieba.Name), tieba.TiebaId, tieba.Exp)
 }
 
 func ParseLikedTieba(html string) (LikedTieba, error) {
@@ -25,11 +25,11 @@ func ParseLikedTieba(html string) (LikedTieba, error) {
 	if names == nil {
 		return likedTieba, errors.New("Cannot get parse string")
 	}
-	likedTieba.unicodeName = names[1]
-	likedTieba.name = names[2]
+	likedTieba.UnicodeName = names[1]
+	likedTieba.Name = names[2]
 	exp = regexp.MustCompile("<a class=\"cur_exp\".+?>(\\d+)</a>")
-	likedTieba.exp, _ = strconv.Atoi(exp.FindStringSubmatch(html)[1])
+	likedTieba.Exp, _ = strconv.Atoi(exp.FindStringSubmatch(html)[1])
 	exp = regexp.MustCompile("balvid=\"(\\d+)\"")
-	likedTieba.tiebaId, _ = strconv.Atoi(exp.FindStringSubmatch(html)[1])
+	likedTieba.TiebaId, _ = strconv.Atoi(exp.FindStringSubmatch(html)[1])
 	return likedTieba, nil
 }

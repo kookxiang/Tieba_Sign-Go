@@ -29,8 +29,17 @@ func main() {
 		ioutil.WriteFile("cookie.txt", []byte(cookieStr), 0644)
 
 		fmt.Println("Your cookie has been written into cookie.txt")
-		GetLikedTiebaList()
-		time.Sleep(2e9)
+		likedTiebaList, err := GetLikedTiebaList()
+		if err != nil {
+			fmt.Println(err)
+			return;
+		}
+		for _, tieba := range likedTiebaList {
+			status, message, exp := TiebaSign(tieba)
+			fmt.Printf("%s\t%d: %s\tEXP+%d\n", ToUtf8(tieba.Name), status, message, exp)
+			time.Sleep(1e9)
+		}
+		time.Sleep(3e9)
 	} else {
 		time.Sleep(5e9)
 	}

@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"crypto/md5"
+	"encoding/hex"
 )
 
 func GetBaiduID() string {
@@ -19,14 +21,7 @@ func GetBaiduID() string {
 }
 
 func getBaiduID() string {
-	cookies := GetCookie()
-	for _, cookie := range cookies {
-		if cookie.Name == "BAIDUID" {
-			// Already has BAIDUID cookie
-			return cookie.Value
-		}
-	}
-	return ""
+	return GetCookie("BAIDUID")
 }
 
 func GetLoginToken() (string, error) {
@@ -109,7 +104,7 @@ func BaiduLoginWithCaptcha(username, password, codeString, verifyCode, loginToke
 	return 1, nil
 }
 
-func GetLikedTiebaList() (map[int]string, error) {
+func GetLikedTiebaList() ([]LikedTieba, error) {
 	pn := 0
 	likedTiebaList := make([]LikedTieba, 0)
 	for {
@@ -128,7 +123,68 @@ func GetLikedTiebaList() (map[int]string, error) {
 			}
 			likedTiebaList = append(likedTiebaList, likedTieba)
 		}
-		break
+		if allTr == nil { break }
 	}
-	return nil, nil
+	return likedTiebaList, nil
+}
+
+func getTbs() string {
+	body, err := Fetch("http://tieba.baidu.com/dc/common/tbs", nil)
+	if err != nil {
+		return ""
+	}
+	json, parseErr := NewJson([]byte(body))
+	if parseErr != nil {
+		return ""
+	}
+	return json.Get("tbs").MustString()
+}
+
+func TiebaSign(tieba LikedTieba) (int, string, int) {
+	postData := make(map[string]string)
+	postData["BDUSS"] = GetCookie("BDUSS")
+	postData["_client_id"] = "03-00-DA-59-05-00-72-96-06-00-01-00-04-00-4C-43-01-00-34-F4-02-00-BC-25-09-00-4E-36";
+	postData["_client_type"] = "4";
+	postData["_client_version"] = "1.2.1.17";
+	postData["_phone_imei"] = "540b43b59d21b7a4824e1fd31b08e9a6";
+	postData["fid"] = string(tieba.TiebaId);
+	postData["kw"] = tieba.Name;
+	postData["net_type"] = "3";
+	postData["tbs"] = getTbs();
+
+	sign_str := "";
+	for key, value := range postData {
+		sign_str += fmt.Sprintf("%s=%s", key, value)
+	}
+
+	MD5 := md5.New()
+	MD5.Write([]byte(sign_str))
+	MD5Result := MD5.Sum(nil)
+	signValue := make([]byte, 32)
+	hex.Encode(signValue, MD5Result)
+	postData["sign"] = strings.ToUpper(string(signValue))
+
+	body, fetchErr := Fetch("http://c.tieba.baidu.com/c/c/forum/sign", postData)
+	if fetchErr != nil {
+		return -1, fetchErr.Error(), 0
+	}
+	json, parseErr := NewJson([]byte(body))
+	if parseErr != nil {
+		return -1, parseErr.Error(), 0
+	}
+	exp, err := json.Get("user_info").Get("sign_bonus_point").Int()
+	if err == nil {
+		return 2, fmt.Sprintf("签到成功，获得经验值 %d", exp), exp
+	}
+	switch json.Get("error_code").MustString() {
+		case "340010":	fallthrough
+		case "160002":	fallthrough
+		case "3":		return 2, "你已经签到过了", 0
+		case "1":		fallthrough
+		case "160004":	return -1, fmt.Sprintf("ERROR-%s: %s", json.Get("error_code").MustString(), json.Get("error_msg").MustString()), 0
+		case "160003":	fallthrough
+		case "160008":	fallthrough
+		default:		return 1, fmt.Sprintf("ERROR-%s: %s", json.Get("error_code").MustString(), json.Get("error_msg").MustString()), 0
+	}
+	return -255, "", 0
 }
