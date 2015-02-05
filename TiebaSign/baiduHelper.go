@@ -9,7 +9,7 @@ import (
 	"strings"
 	"crypto/md5"
 	"encoding/hex"
-)
+	"sort")
 
 func GetBaiduID() string {
 	baiduID := getBaiduID()
@@ -147,15 +147,22 @@ func TiebaSign(tieba LikedTieba) (int, string, int) {
 	postData["_client_type"] = "4";
 	postData["_client_version"] = "1.2.1.17";
 	postData["_phone_imei"] = "540b43b59d21b7a4824e1fd31b08e9a6";
-	postData["fid"] = string(tieba.TiebaId);
+	postData["fid"] = fmt.Sprintf("%d", tieba.TiebaId);
 	postData["kw"] = tieba.Name;
 	postData["net_type"] = "3";
 	postData["tbs"] = getTbs();
 
-	sign_str := "";
-	for key, value := range postData {
-		sign_str += fmt.Sprintf("%s=%s", key, value)
+	var keys []string
+	for key, _ := range postData {
+		keys = append(keys, key)
 	}
+	sort.Sort(sort.StringSlice(keys))
+
+	sign_str := "";
+	for _, key := range keys {
+		sign_str += fmt.Sprintf("%s=%s", key, postData[key])
+	}
+	sign_str += "tiebaclient!!!"
 
 	MD5 := md5.New()
 	MD5.Write([]byte(sign_str))
