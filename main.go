@@ -23,7 +23,7 @@ func main() {
 	if loginErr == nil && result > 0 {
 		fmt.Println("Successfully login")
 		cookieStr := ""
-		for _, cookie := range GetCookie() {
+		for _, cookie := range GetCookies() {
 			cookieStr += cookie.Name + "=" + cookie.Value + "\n"
 		}
 		ioutil.WriteFile("cookie.txt", []byte(cookieStr), 0644)

@@ -42,6 +42,15 @@ func Fetch(targetUrl string, postData map[string]string) (string, error) {
 	return string(body), nil
 }
 
-func GetCookie() []*http.Cookie {
+func GetCookie(name string) http.Cookie {
+	for _, cookie := range cookies {
+		if name == cookie.Name {
+			return cookie
+		}
+	}
+	return nil
+}
+
+func GetCookies() []*http.Cookie {
 	return cookies
 }
