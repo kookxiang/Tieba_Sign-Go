@@ -85,10 +85,6 @@ func BaiduLoginWithCaptcha(username, password, codeString, verifyCode, loginToke
 		fmt.Println("Wrong username or password")
 		return -2, nil // 用户名 / 密码有误
 	}
-	if errNo != "" && errNo != "err_no=0" {
-		fmt.Println("Unknown error. Error number:", errNo)
-		return -3, nil
-	}
 	if matched, _ := regexp.Match("captchaservice", []byte(body)); matched {
 		reg, _ := regexp.Compile("(captchaservice\\w{200,})")
 		fmt.Println("Server denied logging request and sent a captcha.")
@@ -99,6 +95,10 @@ func BaiduLoginWithCaptcha(username, password, codeString, verifyCode, loginToke
 		fmt.Print("Now enter the captcha: ")
 		fmt.Scan(&verifyCode)
 		return BaiduLoginWithCaptcha(username, password, codeString, verifyCode, loginToken)
+	}
+	if errNo != "" && errNo != "err_no=0" {
+		fmt.Println("Unknown error. Error number:", errNo)
+		return -3, nil
 	}
 
 	return 1, nil
