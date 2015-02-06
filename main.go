@@ -44,6 +44,7 @@ func main() {
 		for _, tieba := range likedTiebaList {
 			linkedList.PushBack(tieba)
 		}
+		failedAttempts := make(map[int]int)
 		for {
 			listItem := linkedList.Front()
 			if listItem == nil {
@@ -57,7 +58,14 @@ func main() {
 				time.Sleep(2e9)
 			}
 			if status == 1 {
-				linkedList.PushBack(tieba) // push failed items back to list
+				if failedAttempts[tieba.TiebaId] {
+					failedAttempts[tieba.TiebaId]++
+				} else {
+					failedAttempts[tieba.TiebaId] = 1
+				}
+				if failedAttempts[tieba.TiebaId] <= 15 {
+					linkedList.PushBack(tieba) // push failed items back to list
+				}
 			}
 		}
 		time.Sleep(3e9)
