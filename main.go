@@ -54,7 +54,7 @@ func main() {
 			status, message, exp := TiebaSign(tieba)
 			fmt.Printf("%s\t%d: %s\tEXP+%d\n", ToUtf8(tieba.Name), status, message, exp)
 			if exp > 0 || status == 1 {
-				time.Sleep(1e9)
+				time.Sleep(2e9)
 			}
 			if status == 1 {
 				linkedList.PushBack(tieba) // push failed items back to list
