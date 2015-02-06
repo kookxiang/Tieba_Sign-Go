@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"container/list"
 	"fmt"
-	"github.com/bgentry/speakeasy"
 	"io/ioutil"
 	"os"
 	"time"
@@ -21,7 +20,7 @@ func main() {
 		return
 	}
 	fmt.Print("Enter your Baidu Password: ")
-	password, _ = speakeasy.Ask("(Hidden)")
+    fmt.Scan(&password)
 	if password == "" {
 		return
 	}
