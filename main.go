@@ -2,21 +2,26 @@ package main
 
 import (
 	. "./TiebaSign"
+	"bufio"
 	"container/list"
 	"fmt"
+	"github.com/bgentry/speakeasy"
 	"io/ioutil"
+	"os"
 	"time"
 )
 
 func main() {
 	var username, password string
+	bufferedReader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your Baidu ID: ")
-	fmt.Scan(&username)
+	usernameByte, _, _ := bufferedReader.ReadLine()
+	username = string(usernameByte)
 	if username == "" {
 		return
 	}
 	fmt.Print("Enter your Baidu Password: ")
-	fmt.Scan(&password)
+	password, _ = speakeasy.Ask("(Hidden)")
 	if password == "" {
 		return
 	}
