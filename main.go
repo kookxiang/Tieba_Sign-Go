@@ -2,6 +2,7 @@ package main
 
 import (
 	. "./TiebaSign"
+	"container/list"
 	"fmt"
 	"io/ioutil"
 	"time"
@@ -34,11 +35,24 @@ func main() {
 			fmt.Println(err)
 			return
 		}
+		linkedList := list.New() // Create sign list
 		for _, tieba := range likedTiebaList {
+			linkedList.PushBack(tieba)
+		}
+		for {
+			listItem := linkedList.Front()
+			if listItem == nil {
+				break
+			}
+			linkedList.Remove(listItem)
+			tieba := listItem.Value.(LikedTieba)
 			status, message, exp := TiebaSign(tieba)
 			fmt.Printf("%s\t%d: %s\tEXP+%d\n", ToUtf8(tieba.Name), status, message, exp)
 			if exp > 0 || status == 1 {
 				time.Sleep(1e9)
+			}
+			if status == 1 {
+				linkedList.PushBack(tieba) // push failed items back to list
 			}
 		}
 		time.Sleep(3e9)
