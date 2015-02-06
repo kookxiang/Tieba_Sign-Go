@@ -194,6 +194,8 @@ func TiebaSign(tieba LikedTieba) (int, string, int) {
 		return 2, "你已经签到过了", 0
 	case "1":
 		fallthrough
+	case "340008": // 黑名单
+		fallthrough
 	case "160004":
 		return -1, fmt.Sprintf("ERROR-%s: %s", json.Get("error_code").MustString(), json.Get("error_msg").MustString()), 0
 	case "160003":
