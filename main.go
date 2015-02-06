@@ -58,11 +58,7 @@ func main() {
 				time.Sleep(2e9)
 			}
 			if status == 1 {
-				if failedAttempts[tieba.TiebaId] {
-					failedAttempts[tieba.TiebaId]++
-				} else {
-					failedAttempts[tieba.TiebaId] = 1
-				}
+				failedAttempts[tieba.TiebaId]++
 				if failedAttempts[tieba.TiebaId] <= 15 {
 					linkedList.PushBack(tieba) // push failed items back to list
 				}
