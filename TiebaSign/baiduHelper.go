@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -181,8 +182,8 @@ func TiebaSign(tieba LikedTieba) (int, string, int) {
 	if parseErr != nil {
 		return -1, parseErr.Error(), 0
 	}
-	exp, err := json.Get("user_info").Get("sign_bonus_point").Int()
-	if err == nil {
+	if _exp, succeed := json.Get("user_info").CheckGet("sign_bonus_point"); succeed {
+		exp, _ := strconv.Atoi(_exp.MustString())
 		return 2, fmt.Sprintf("签到成功，获得经验值 %d", exp), exp
 	}
 	switch json.Get("error_code").MustString() {
