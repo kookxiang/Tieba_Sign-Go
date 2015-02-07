@@ -36,6 +36,7 @@ func main() {
 		cookieJar.SetCookies(url, cookies)
 		if GetLoginStatus(cookieJar) {
 			needLogin = false
+			fmt.Println("Using cookie saved in cookie.txt...")
 		}
 	}
 	if needLogin {
@@ -69,6 +70,7 @@ func main() {
 	}
 
 	// Start sign
+	fmt.Println("Fetching tieba list...")
 	likedTiebaList, err := GetLikedTiebaList(cookieJar)
 	if err != nil {
 		fmt.Println(err)
