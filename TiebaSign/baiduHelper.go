@@ -6,28 +6,29 @@ import (
 	"fmt"
 	. "github.com/bitly/go-simplejson"
 	"io/ioutil"
+	"net/http/cookiejar"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-func GetBaiduID() string {
-	baiduID := getBaiduID()
+func GetBaiduID(ptrCookieJar *cookiejar.Jar) string {
+	baiduID := getBaiduID(ptrCookieJar)
 	if baiduID == "" {
-		Fetch("https://passport.baidu.com/v2/", nil)
-		baiduID = getBaiduID()
+		Fetch("https://passport.baidu.com/v2/", nil, ptrCookieJar)
+		baiduID = getBaiduID(ptrCookieJar)
 	}
 	return baiduID
 }
 
-func getBaiduID() string {
-	return GetCookie("BAIDUID")
+func getBaiduID(ptrCookieJar *cookiejar.Jar) string {
+	return GetCookie(ptrCookieJar, "BAIDUID")
 }
 
-func GetLoginToken() (string, error) {
-	GetBaiduID()
-	body, fetchErr := Fetch("https://passport.baidu.com/v2/api/?getapi&tpl=tb&apiver=v3&tt="+GetTimestampStr()+"520&class=login&logintype=dialogLogin", nil)
+func GetLoginToken(ptrCookieJar *cookiejar.Jar) (string, error) {
+	GetBaiduID(ptrCookieJar)
+	body, fetchErr := Fetch("https://passport.baidu.com/v2/api/?getapi&tpl=tb&apiver=v3&tt="+GetTimestampStr()+"520&class=login&logintype=dialogLogin", nil, ptrCookieJar)
 	if fetchErr != nil {
 		return "", fetchErr
 	}
@@ -43,15 +44,15 @@ func GetLoginToken() (string, error) {
 	return token, nil
 }
 
-func BaiduLogin(username, password string) (result int, err error) {
-	loginToken, tokenError := GetLoginToken()
+func BaiduLogin(username, password string, ptrCookieJar *cookiejar.Jar) (result int, err error) {
+	loginToken, tokenError := GetLoginToken(ptrCookieJar)
 	if tokenError != nil {
 		return 0, tokenError
 	}
-	return BaiduLoginWithCaptcha(username, password, "", "", loginToken)
+	return BaiduLoginWithCaptcha(username, password, ptrCookieJar, "", "", loginToken)
 }
 
-func BaiduLoginWithCaptcha(username, password, codeString, verifyCode, loginToken string) (result int, err error) {
+func BaiduLoginWithCaptcha(username, password string, ptrCookieJar *cookiejar.Jar, codeString, verifyCode, loginToken string) (result int, err error) {
 	postData := make(map[string]string)
 	postData["apiver"] = "v3"
 	postData["charset"] = "UTF-8"
@@ -72,7 +73,7 @@ func BaiduLoginWithCaptcha(username, password, codeString, verifyCode, loginToke
 	postData["username"] = username
 	postData["verifycode"] = verifyCode
 
-	body, fetchErr := Fetch("https://passport.baidu.com/v2/api/?login", postData)
+	body, fetchErr := Fetch("https://passport.baidu.com/v2/api/?login", postData, ptrCookieJar)
 	if fetchErr != nil {
 		return 0, fetchErr
 	}
@@ -91,11 +92,11 @@ func BaiduLoginWithCaptcha(username, password, codeString, verifyCode, loginToke
 		fmt.Println("Server denied logging request and sent a captcha.")
 		codeString = reg.FindString(body)
 		fmt.Println("Please open captcha image manually: captcha.jpg")
-		verifyImage, _ := Fetch("https://passport.baidu.com/cgi-bin/genimage?"+codeString, nil)
+		verifyImage, _ := Fetch("https://passport.baidu.com/cgi-bin/genimage?"+codeString, nil, ptrCookieJar)
 		ioutil.WriteFile("captcha.jpg", []byte(verifyImage), 0644)
 		fmt.Print("Now enter the captcha: ")
 		fmt.Scan(&verifyCode)
-		return BaiduLoginWithCaptcha(username, password, codeString, verifyCode, loginToken)
+		return BaiduLoginWithCaptcha(username, password, ptrCookieJar, codeString, verifyCode, loginToken)
 	}
 	if errNo != "" && errNo != "err_no=0" {
 		fmt.Println("Unknown error. Error number:", errNo)
@@ -105,13 +106,13 @@ func BaiduLoginWithCaptcha(username, password, codeString, verifyCode, loginToke
 	return 1, nil
 }
 
-func GetLikedTiebaList() ([]LikedTieba, error) {
+func GetLikedTiebaList(ptrCookieJar *cookiejar.Jar) ([]LikedTieba, error) {
 	pn := 0
 	likedTiebaList := make([]LikedTieba, 0)
 	for {
 		pn++
 		url := "http://tieba.baidu.com/f/like/mylike?pn=" + fmt.Sprintf("%d", pn)
-		body, fetchErr := Fetch(url, nil)
+		body, fetchErr := Fetch(url, nil, ptrCookieJar)
 		if fetchErr != nil {
 			return nil, fetchErr
 		}
@@ -131,8 +132,8 @@ func GetLikedTiebaList() ([]LikedTieba, error) {
 	return likedTiebaList, nil
 }
 
-func getTbs() string {
-	body, err := Fetch("http://tieba.baidu.com/dc/common/tbs", nil)
+func getTbs(ptrCookieJar *cookiejar.Jar) string {
+	body, err := Fetch("http://tieba.baidu.com/dc/common/tbs", nil, ptrCookieJar)
 	if err != nil {
 		return ""
 	}
@@ -143,8 +144,8 @@ func getTbs() string {
 	return json.Get("tbs").MustString()
 }
 
-func GetLoginStatus() bool {
-	body, err := Fetch("http://tieba.baidu.com/dc/common/tbs", nil)
+func GetLoginStatus(ptrCookieJar *cookiejar.Jar) bool {
+	body, err := Fetch("http://tieba.baidu.com/dc/common/tbs", nil, ptrCookieJar)
 	if err != nil {
 		return false
 	}
@@ -155,9 +156,9 @@ func GetLoginStatus() bool {
 	return json.Get("is_login").MustInt() == 1
 }
 
-func TiebaSign(tieba LikedTieba) (int, string, int) {
+func TiebaSign(tieba LikedTieba, ptrCookieJar *cookiejar.Jar) (int, string, int) {
 	postData := make(map[string]string)
-	postData["BDUSS"] = GetCookie("BDUSS")
+	postData["BDUSS"] = GetCookie(ptrCookieJar, "BDUSS")
 	postData["_client_id"] = "03-00-DA-59-05-00-72-96-06-00-01-00-04-00-4C-43-01-00-34-F4-02-00-BC-25-09-00-4E-36"
 	postData["_client_type"] = "4"
 	postData["_client_version"] = "1.2.1.17"
@@ -165,7 +166,7 @@ func TiebaSign(tieba LikedTieba) (int, string, int) {
 	postData["fid"] = fmt.Sprintf("%d", tieba.TiebaId)
 	postData["kw"] = tieba.Name
 	postData["net_type"] = "3"
-	postData["tbs"] = getTbs()
+	postData["tbs"] = getTbs(ptrCookieJar)
 
 	var keys []string
 	for key, _ := range postData {
@@ -186,7 +187,7 @@ func TiebaSign(tieba LikedTieba) (int, string, int) {
 	hex.Encode(signValue, MD5Result)
 	postData["sign"] = strings.ToUpper(string(signValue))
 
-	body, fetchErr := Fetch("http://c.tieba.baidu.com/c/c/forum/sign", postData)
+	body, fetchErr := Fetch("http://c.tieba.baidu.com/c/c/forum/sign", postData, ptrCookieJar)
 	if fetchErr != nil {
 		return -1, fetchErr.Error(), 0
 	}

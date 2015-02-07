@@ -8,13 +8,10 @@ import (
 	"net/url"
 )
 
-var cookies []*http.Cookie
-var cookieJar, _ = cookiejar.New(nil)
-
-func Fetch(targetUrl string, postData map[string]string) (string, error) {
+func Fetch(targetUrl string, postData map[string]string, ptrCookieJar *cookiejar.Jar) (string, error) {
 	var request *http.Request
 	httpClient := &http.Client{
-		Jar: cookieJar,
+		Jar: ptrCookieJar,
 	}
 	if nil == postData {
 		request, _ = http.NewRequest("GET", targetUrl, nil)
@@ -38,11 +35,12 @@ func Fetch(targetUrl string, postData map[string]string) (string, error) {
 	if readError != nil {
 		return "", readError
 	}
-	cookies = cookieJar.Cookies(request.URL)
 	return string(body), nil
 }
 
-func GetCookie(name string) string {
+func GetCookie(cookieJar *cookiejar.Jar, name string) string {
+	cookieUrl, _ := url.Parse("http://tieba.baidu.com")
+	cookies := cookieJar.Cookies(cookieUrl)
 	for _, cookie := range cookies {
 		if name == cookie.Name {
 			return cookie.Value
@@ -51,6 +49,8 @@ func GetCookie(name string) string {
 	return ""
 }
 
-func GetCookies() []*http.Cookie {
+func GetCookies(cookieJar *cookiejar.Jar) []*http.Cookie {
+	cookieUrl, _ := url.Parse("http://tieba.baidu.com")
+	cookies := cookieJar.Cookies(cookieUrl)
 	return cookies
 }

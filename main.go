@@ -14,10 +14,9 @@ import (
 	"time"
 )
 
-var cookieJar, _ = cookiejar.New(nil)
-
 func main() {
 	needLogin := true
+	cookieJar, _ := cookiejar.New(nil)
 	cookies := make([]*http.Cookie, 0)
 	if _, err := os.Stat("cookie.txt"); err == nil {
 		rawCookie, _ := ioutil.ReadFile("cookie.txt")
@@ -35,7 +34,7 @@ func main() {
 		}
 		url, _ := url.Parse("http://baidu.com")
 		cookieJar.SetCookies(url, cookies)
-		if GetLoginStatus() {
+		if GetLoginStatus(cookieJar) {
 			needLogin = false
 		}
 	}
@@ -53,11 +52,11 @@ func main() {
 		if password == "" {
 			return
 		}
-		result, loginErr := BaiduLogin(username, password)
+		result, loginErr := BaiduLogin(username, password, cookieJar)
 		if loginErr == nil && result > 0 {
 			fmt.Println("Successfully login")
 			cookieStr := ""
-			for _, cookie := range GetCookies() {
+			for _, cookie := range GetCookies(cookieJar) {
 				cookieStr += cookie.Name + "=" + cookie.Value + "\n"
 			}
 			ioutil.WriteFile("cookie.txt", []byte(cookieStr), 0644)
@@ -70,7 +69,7 @@ func main() {
 	}
 
 	// Start sign
-	likedTiebaList, err := GetLikedTiebaList()
+	likedTiebaList, err := GetLikedTiebaList(cookieJar)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -87,7 +86,7 @@ func main() {
 		}
 		linkedList.Remove(listItem)
 		tieba := listItem.Value.(LikedTieba)
-		status, message, exp := TiebaSign(tieba)
+		status, message, exp := TiebaSign(tieba, cookieJar)
 		fmt.Printf("%s\t%d: %s\tEXP+%d\n", ToUtf8(tieba.Name), status, message, exp)
 		if exp > 0 || status == 1 {
 			time.Sleep(2e9)
