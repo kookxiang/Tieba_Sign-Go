@@ -143,6 +143,18 @@ func getTbs() string {
 	return json.Get("tbs").MustString()
 }
 
+func GetLoginStatus() bool {
+	body, err := Fetch("http://tieba.baidu.com/dc/common/tbs", nil)
+	if err != nil {
+		return false
+	}
+	json, parseErr := NewJson([]byte(body))
+	if parseErr != nil {
+		return false
+	}
+	return json.Get("is_login").MustInt() == 1
+}
+
 func TiebaSign(tieba LikedTieba) (int, string, int) {
 	postData := make(map[string]string)
 	postData["BDUSS"] = GetCookie("BDUSS")
