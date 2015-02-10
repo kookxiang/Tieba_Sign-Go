@@ -64,6 +64,8 @@ func main() {
 
 			fmt.Println("Your cookie has been written into cookie.txt")
 		} else {
+			fmt.Println("Error while login:")
+			fmt.Println(loginErr)
 			time.Sleep(5e9)
 			return
 		}
