@@ -74,7 +74,7 @@ func getCookie(cookieFileName string, silence bool) (cookieJar *cookiejar.Jar, h
 			time.Sleep(5e9)
 			return nil, true
 		}
-	} else if silence {
+	} else if needLogin && silence {
 		return nil, true
 	}
 	return cookieJar, false
