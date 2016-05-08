@@ -169,6 +169,7 @@ func main() {
 				likedTiebaList, err := GetLikedTiebaList(cookie)
 				if err != nil {
 					fmt.Printf("[%s] Error while fetching tieba list\n", profileName)
+					fmt.Printf("[%s] Go routine stopped.\n", profileName)
 					threadList.Done()
 					return
 				} else {
@@ -209,6 +210,8 @@ func main() {
 						time.Sleep(2e9)
 					}
 				}
+				fmt.Printf("[%s] Finished!\n", profileName)
+				fmt.Printf("[%s] Go routine stopped.\n", profileName)
 				threadList.Done()
 			}(profileName, cookie)
 		}
