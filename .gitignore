@@ -2,6 +2,7 @@
 Tieba_Sign-Go
 cookie.txt
 captcha.jpg
+cookies/
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
