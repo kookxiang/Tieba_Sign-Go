@@ -7,15 +7,15 @@ Build(){
     echo Done!
 }
 
-# # OS X
-# Build Tieba_Sign-Go.darwin darwin amd64
+# OS X
+Build Tieba_Sign-Go.darwin darwin amd64
 
-# # Windows
-# Build Tieba_Sign-Go.x86.exe windows 386
-# Build Tieba_Sign-Go.x64.exe windows amd64
+# Windows
+Build Tieba_Sign-Go.x86.exe windows 386
+Build Tieba_Sign-Go.x64.exe windows amd64
 
-# # Linux
+# Linux
 Build Tieba_Sign-Go.linux.386.bin linux 386
-# Build Tieba_Sign-Go.linux.amd64.bin linux amd64
-# Build Tieba_Sign-Go.linux.arm.bin linux arm
-# Build Tieba_Sign-Go.linux.arm64.bin linux arm64
+Build Tieba_Sign-Go.linux.amd64.bin linux amd64
+Build Tieba_Sign-Go.linux.arm.bin linux arm
+Build Tieba_Sign-Go.linux.arm64.bin linux arm64
