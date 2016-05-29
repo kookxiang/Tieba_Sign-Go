@@ -11,6 +11,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -91,6 +92,9 @@ func main() {
 	var maxRetryTimes = flag.Int("retry", 7, "Max retry times for a single tieba")
 	var cookieFileName = flag.String("cookie", "cookie.txt", "Try to load cookie from specified file")
 	flag.Parse()
+
+	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	os.Chdir(currentDir)
 
 	fmt.Println("Tieba Sign (Go Version) beta")
 	fmt.Println("Author: kookxiang <r18@ikk.me>")
