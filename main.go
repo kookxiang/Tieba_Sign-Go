@@ -46,35 +46,9 @@ func getCookie(cookieFileName string, silence bool) (cookieJar *cookiejar.Jar, h
 		}
 	}
 	if needLogin && !silence {
-		var username, password string
-		bufferedReader := bufio.NewReader(os.Stdin)
-		fmt.Print("Enter your Baidu ID: ")
-		usernameByte, _, _ := bufferedReader.ReadLine()
-		username = string(usernameByte)
-		if username == "" {
-			return nil, true
-		}
-		fmt.Print("Enter your Baidu Password: ")
-		fmt.Scan(&password)
-		if password == "" {
-			return nil, true
-		}
-		result, loginErr := BaiduLogin(username, password, cookieJar)
-		if loginErr == nil && result > 0 {
-			fmt.Println("Successfully login")
-			cookieStr := ""
-			for _, cookie := range GetCookies(cookieJar) {
-				cookieStr += cookie.Name + "=" + cookie.Value + "\n"
-			}
-			ioutil.WriteFile("cookie.txt", []byte(cookieStr), 0644)
-
-			fmt.Println("Your cookie has been written into cookie.txt")
-		} else {
-			fmt.Println("Error while login:")
-			fmt.Println(loginErr)
-			time.Sleep(5e9)
-			return nil, true
-		}
+		fmt.Println("Cannot login, since baidu has switched to RSA login, and I have no time to make a new login program. You have to make a cookie.txt, and paste your cookie in the file.")
+		fmt.Println("Cookie Format: BDUSS=xxxxxxx")
+		return nil, true
 	} else if needLogin && silence {
 		return nil, true
 	}
