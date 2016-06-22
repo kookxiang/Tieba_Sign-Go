@@ -210,6 +210,8 @@ func TiebaSign(tieba LikedTieba, ptrCookieJar *cookiejar.Jar) (int, string, int)
 		fallthrough
 	case "340008": // 黑名单
 		fallthrough
+	case "340006": // 被封啦
+		fallthrough
 	case "160004":
 		return -1, fmt.Sprintf("ERROR-%s: %s", json.Get("error_code").MustString(), json.Get("error_msg").MustString()), 0
 	case "160003":
