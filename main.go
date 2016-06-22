@@ -2,7 +2,6 @@ package main
 
 import (
 	. "./TiebaSign"
-	"bufio"
 	"container/list"
 	"flag"
 	"fmt"
