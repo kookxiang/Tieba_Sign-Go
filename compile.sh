@@ -7,8 +7,8 @@ Build(){
     echo Done!
 }
 
-# OS X
-Build Tieba_Sign-Go.darwin darwin amd64
+# OS X / macOS
+Build Tieba_Sign-Go.macOS darwin amd64
 
 # Windows
 Build Tieba_Sign-Go.x86.exe windows 386
