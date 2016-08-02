@@ -2,6 +2,7 @@ package main
 
 import (
 	. "./TiebaSign"
+	"bytes"
 	"container/list"
 	"flag"
 	"fmt"
@@ -22,6 +23,7 @@ func getCookie(cookieFileName string, silence bool) (cookieJar *cookiejar.Jar, h
 	cookies := make([]*http.Cookie, 0)
 	if _, err := os.Stat(cookieFileName); err == nil {
 		rawCookie, _ := ioutil.ReadFile(cookieFileName)
+		rawCookie = bytes.Trim(rawCookie, "\xef\xbb\xbf")
 		rawCookieList := strings.Split(strings.Replace(string(rawCookie), "\r\n", "\n", -1), "\n")
 		for _, rawCookieLine := range rawCookieList {
 			rawCookieInfo := strings.SplitN(rawCookieLine, "=", 2)
