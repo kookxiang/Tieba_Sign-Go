@@ -106,20 +106,81 @@ func BaiduLoginWithCaptcha(username, password string, ptrCookieJar *cookiejar.Ja
 	return 1, nil
 }
 
+func getBaName(bas []byte)(baname string){
+ json, parseErr := NewJson(bas)
+	if parseErr != nil {
+		return ""
+	}
+	return json.Get("tmpp").MustString()
+}
+
+
+func getUserId(ptrCookieJar *cookiejar.Jar)(userid string, err error){
+ var (
+ unameUrl string = `http://tieba.baidu.com/f/user/json_userinfo`
+ uidUrl string = `http://tieba.baidu.com/home/get/panel?un=`
+ uidHtml string = `http://tieba.baidu.com/f/search/adv`
+ userName string
+ )
+ userJson, fetchErr := Fetch(unameUrl, nil, ptrCookieJar)
+	if fetchErr != nil {
+		return "", fetchErr
+	}
+	exp := regexp.MustCompile("\"user_name_url\":\"(.*?)\",")
+	result := exp.FindStringSubmatch(userJson)
+	if result != nil{
+		userName = result[1]
+	} else {
+		userName = ``
+	}
+	//userName := (result != nil)? result[1]:``//illegal
+	uidUrl += userName
+	userJson, fetchErr = Fetch(uidUrl, nil, ptrCookieJar)
+	if fetchErr != nil {
+		return "", fetchErr
+	} 
+	exp = regexp.MustCompile("\"id\":(.*?),")
+	result = exp.FindStringSubmatch(userJson)
+	if result != nil{
+		return result[1], nil
+	} else {
+		userhtml, fetchErr := Fetch(uidHtml, nil, ptrCookieJar)
+		if fetchErr != nil {
+			return "", fetchErr
+		}
+		exp := regexp.MustCompile("\"user_id\": \"(.*?)\",")
+		result = exp.FindStringSubmatch(userhtml)
+		if result != nil{
+		return result[1], nil
+		} else {
+		return `1`, nil 
+		}
+	}
+}
+
+
 func GetLikedTiebaList(ptrCookieJar *cookiejar.Jar) ([]LikedTieba, error) {
+ //var uid string = `1`
+ uid, Ue := getUserId(ptrCookieJar)
+  if Ue != nil {
+			return nil, Ue
+		}
 	pn := 0
 	likedTiebaList := make([]LikedTieba, 0)
 	for {
 		pn++
-		url := "http://tieba.baidu.com/f/like/mylike?pn=" + fmt.Sprintf("%d", pn)
+		page_no := fmt.Sprintf("%d", pn)
+  		sign_str := `_client_version=6.9.2.1page_no=` + page_no + `page_size=200uid=` + uid + `tiebaclient!!!`
+		sign_r := strings.ToUpper(MD5Encrypt(sign_str))
+		url := `http://c.tieba.baidu.com/c/f/forum/like?_client_version=6.9.2.1&page_no=` + page_no + `&page_size=200&uid=` + uid + `&sign=` + sign_r
 		body, fetchErr := Fetch(url, nil, ptrCookieJar)
 		if fetchErr != nil {
 			return nil, fetchErr
 		}
-		reg := regexp.MustCompile("<tr><td>.+?</tr>")
-		allTr := reg.FindAllString(body, -1)
+		regreg := regexp.MustCompile("{\"id\":\".+?\"levelup_score\":\"")
+		allTr := regreg.FindAllString(body, -1)
 		for _, line := range allTr {
-			likedTieba, err := ParseLikedTieba(line)
+			likedTieba, err := newParseLikedTieba(line)
 			if err != nil {
 				continue
 			}
@@ -179,13 +240,8 @@ func TiebaSign(tieba LikedTieba, ptrCookieJar *cookiejar.Jar) (int, string, int)
 		sign_str += fmt.Sprintf("%s=%s", key, postData[key])
 	}
 	sign_str += "tiebaclient!!!"
-
-	MD5 := md5.New()
-	MD5.Write([]byte(sign_str))
-	MD5Result := MD5.Sum(nil)
-	signValue := make([]byte, 32)
-	hex.Encode(signValue, MD5Result)
-	postData["sign"] = strings.ToUpper(string(signValue))
+	
+	postData["sign"] = strings.ToUpper(MD5Encrypt(sign_str))
 
 	body, fetchErr := Fetch("http://c.tieba.baidu.com/c/c/forum/sign", postData, ptrCookieJar)
 	if fetchErr != nil {
@@ -222,4 +278,11 @@ func TiebaSign(tieba LikedTieba, ptrCookieJar *cookiejar.Jar) (int, string, int)
 		return 1, fmt.Sprintf("ERROR-%s: %s", json.Get("error_code").MustString(), json.Get("error_msg").MustString()), 0
 	}
 	return -255, "", 0
+}
+
+func MD5Encrypt(str string) string {
+    md5Ctx := md5.New()
+    md5Ctx.Write([]byte(str))
+    cipherStr := md5Ctx.Sum(nil)
+    return hex.EncodeToString(cipherStr)
 }

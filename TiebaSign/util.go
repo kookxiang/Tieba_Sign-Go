@@ -1,11 +1,11 @@
 package TiebaSign
 
 import (
-	"bytes"
+	//"bytes"
 	"fmt"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
-	"io/ioutil"
+	//"golang.org/x/text/encoding/simplifiedchinese"
+	//"golang.org/x/text/transform"
+	//"io/ioutil"
 	"time"
 )
 
@@ -14,8 +14,11 @@ func GetTimestampStr() string {
 }
 
 func ToUtf8(gbkString string) string {
+return gbkString
+/*
 	I := bytes.NewReader([]byte(gbkString))
 	O := transform.NewReader(I, simplifiedchinese.GBK.NewDecoder())
 	d, _ := ioutil.ReadAll(O)
 	return string(d)
+*/
 }

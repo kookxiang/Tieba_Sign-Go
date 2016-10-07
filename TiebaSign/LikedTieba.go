@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type LikedTieba struct {
@@ -18,18 +19,19 @@ func (tieba LikedTieba) String() string {
 	return fmt.Sprintf("%s (ID:%d, EXP:%d)", ToUtf8(tieba.Name), tieba.TiebaId, tieba.Exp)
 }
 
-func ParseLikedTieba(html string) (LikedTieba, error) {
+func newParseLikedTieba(bajson string) (LikedTieba, error) {
 	likedTieba := LikedTieba{}
-	exp := regexp.MustCompile("<a href=\"/f\\?kw=(.*?)\" title=\"(.*?)\"")
-	names := exp.FindStringSubmatch(html)
+	exp := regexp.MustCompile("\"name\":\"(.*?)\"")
+	names := exp.FindStringSubmatch(bajson)
 	if names == nil {
 		return likedTieba, errors.New("Cannot get parse string")
 	}
-	likedTieba.UnicodeName = names[1]
-	likedTieba.Name = names[2]
-	exp = regexp.MustCompile("<a class=\"cur_exp\".+?>(\\d+)</a>")
-	likedTieba.Exp, _ = strconv.Atoi(exp.FindStringSubmatch(html)[1])
-	exp = regexp.MustCompile("balvid=\"(\\d+)\"")
-	likedTieba.TiebaId, _ = strconv.Atoi(exp.FindStringSubmatch(html)[1])
+	strstr := []string{`{"tmpp":"`, names[1], `"}`}
+ bas := []byte(strings.Join(strstr, ""))
+	likedTieba.Name = getBaName(bas)
+	exp = regexp.MustCompile("\"cur_score\":\"(\\d+)\"")
+	likedTieba.Exp, _ = strconv.Atoi(exp.FindStringSubmatch(bajson)[1])
+	exp = regexp.MustCompile("{\"id\":\"(\\d+)\"")
+	likedTieba.TiebaId, _ = strconv.Atoi(exp.FindStringSubmatch(bajson)[1])
 	return likedTieba, nil
 }
