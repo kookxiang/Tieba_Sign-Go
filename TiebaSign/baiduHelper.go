@@ -170,9 +170,8 @@ func GetLikedTiebaList(ptrCookieJar *cookiejar.Jar) ([]LikedTieba, error) {
 	for {
 		pn++
 		page_no := fmt.Sprintf("%d", pn)
-  	sign_str := `_client_version=6.9.2.1page_no=` + page_no + `page_size=200uid=` + uid + `tiebaclient!!!`
-		signValue := MD5Encrypt(sign_str)
-		sign_r := strings.ToUpper(signValue)
+  		sign_str := `_client_version=6.9.2.1page_no=` + page_no + `page_size=200uid=` + uid + `tiebaclient!!!`
+		sign_r := strings.ToUpper(MD5Encrypt(sign_str))
 		url := `http://c.tieba.baidu.com/c/f/forum/like?_client_version=6.9.2.1&page_no=` + page_no + `&page_size=200&uid=` + uid + `&sign=` + sign_r
 		body, fetchErr := Fetch(url, nil, ptrCookieJar)
 		if fetchErr != nil {
@@ -241,9 +240,8 @@ func TiebaSign(tieba LikedTieba, ptrCookieJar *cookiejar.Jar) (int, string, int)
 		sign_str += fmt.Sprintf("%s=%s", key, postData[key])
 	}
 	sign_str += "tiebaclient!!!"
-	signValue := MD5Encrypt(sign_str)
 	
-	postData["sign"] = strings.ToUpper(string(signValue))
+	postData["sign"] = strings.ToUpper(MD5Encrypt(sign_str))
 
 	body, fetchErr := Fetch("http://c.tieba.baidu.com/c/c/forum/sign", postData, ptrCookieJar)
 	if fetchErr != nil {
