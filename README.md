@@ -20,6 +20,7 @@ If you cannot login via user interactive mode, you need to gather cookie informa
 
 ```
 BDUSS=YOUR-BDUSS-SECRET-CODE-IN-COOKIE
+STOKEN=YOUR-STOKEN-CODE-IN-COOKIE-AT-tieba.baidu.com
 (Others is optional)
 ```
 
