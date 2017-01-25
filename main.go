@@ -1,7 +1,7 @@
 package main
 
 import (
-	. "./TiebaSign"
+	. "github.com/Evi1/Tieba_Sign-Go/TiebaSign"
 	"bytes"
 	"container/list"
 	"flag"
@@ -37,8 +37,8 @@ func getCookie(cookieFileName string, silence bool) (cookieJar *cookiejar.Jar, h
 			})
 		}
 		fmt.Printf("Verifying imported cookies from %s...", cookieFileName)
-		url, _ := url.Parse("http://baidu.com")
-		cookieJar.SetCookies(url, cookies)
+		URL, _ := url.Parse("http://baidu.com")
+		cookieJar.SetCookies(URL, cookies)
 		if GetLoginStatus(cookieJar) {
 			needLogin = false
 			fmt.Println("OK")
@@ -53,7 +53,8 @@ func getCookie(cookieFileName string, silence bool) (cookieJar *cookiejar.Jar, h
 	} else if needLogin && silence {
 		return nil, true
 	}
-	return cookieJar, false
+	hasError=false
+	return
 }
 
 type SignTask struct {
