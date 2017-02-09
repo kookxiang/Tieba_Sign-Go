@@ -64,7 +64,7 @@ type SignTask struct {
 }
 
 func main() {
-	var batchMode = flag.Bool("batch", false, "Batch Sign mode")
+	var batchMode = flag.Bool("batch", true, "Batch Sign mode")
 	var maxRetryTimes = flag.Int("retry", 7, "Max retry times for a single tieba")
 	var cookieFileName = flag.String("cookie", "cookie.txt", "Try to load cookie from specified file")
 	flag.Parse()
@@ -170,24 +170,22 @@ func main() {
 					}
 					taskList.Remove(taskNode)
 					task := taskNode.Value.(SignTask)
-					status, _, exp := TiebaSign(task.tieba, task.cookie)
+					status, s, exp := TiebaSign(task.tieba, task.cookie)
 					if status == 2 {
 						if exp > 0 {
-							fmt.Printf("[%s] Succeed: %s, Exp +%d\n", profileName, ToUtf8(task.tieba.Name), exp)
+							fmt.Printf(s+" [%s] Succeed: %s, Exp +%d\n", profileName, ToUtf8(task.tieba.Name), exp)
 						} else {
-							fmt.Printf("[%s] Succeed: %s\n", profileName, ToUtf8(task.tieba.Name))
+							fmt.Printf(s+" [%s] Succeed: %s\n", profileName, ToUtf8(task.tieba.Name))
 						}
 					} else if status == 1 {
-						fmt.Printf("[%s] Failed:  %s\n", profileName, ToUtf8(task.tieba.Name))
+						fmt.Printf(s+" [%s] Failed1:  %s\n", profileName, ToUtf8(task.tieba.Name))
 						task.failedAttempts++
 						if task.failedAttempts <= *maxRetryTimes {
 							taskList.PushBack(task) // push failed task back to list
 						}
-					} else {
-						fmt.Printf("[%s] Failed:  %s\n", profileName, ToUtf8(task.tieba.Name))
-					}
-					if exp > 0 || status == 1 {
 						time.Sleep(2e9)
+					} else {
+						fmt.Printf(s+" [%s] Failed2:  %s\n", profileName, ToUtf8(task.tieba.Name))
 					}
 				}
 				fmt.Printf("[%s] Finished!\n", profileName)
