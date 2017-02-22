@@ -1,72 +1,36 @@
 package main
 
 import (
-	. "github.com/Evi1/Tieba_Sign-Go/TiebaSign"
-	"bytes"
-	"container/list"
+	"github.com/Evi1/Tieba_Sign-Go/TiebaSign"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/http/cookiejar"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
-	"sync"
+	"github.com/Evi1/Tieba_Sign-Go/conf"
 	"time"
+	"net/http"
+	"github.com/Evi1/Tieba_Sign-Go/frontend"
+	. "github.com/Evi1/Tieba_Sign-Go/global"
 )
 
-func getCookie(cookieFileName string, silence bool) (cookieJar *cookiejar.Jar, hasError bool) {
-	needLogin := true
-	cookieJar, _ = cookiejar.New(nil)
-	cookies := make([]*http.Cookie, 0)
-	if _, err := os.Stat(cookieFileName); err == nil {
-		rawCookie, _ := ioutil.ReadFile(cookieFileName)
-		rawCookie = bytes.Trim(rawCookie, "\xef\xbb\xbf")
-		rawCookieList := strings.Split(strings.Replace(string(rawCookie), "\r\n", "\n", -1), "\n")
-		for _, rawCookieLine := range rawCookieList {
-			rawCookieInfo := strings.SplitN(rawCookieLine, "=", 2)
-			if len(rawCookieInfo) < 2 {
-				continue
-			}
-			cookies = append(cookies, &http.Cookie{
-				Name:   rawCookieInfo[0],
-				Value:  rawCookieInfo[1],
-				Domain: ".baidu.com",
-			})
-		}
-		fmt.Printf("Verifying imported cookies from %s...", cookieFileName)
-		URL, _ := url.Parse("http://baidu.com")
-		cookieJar.SetCookies(URL, cookies)
-		if GetLoginStatus(cookieJar) {
-			needLogin = false
-			fmt.Println("OK")
-		} else {
-			fmt.Println("Failed")
-		}
-	}
-	if needLogin && !silence {
-		fmt.Println("Cannot login, since baidu has switched to RSA login, and I have no time to make a new login program. You have to make a cookie.txt, and paste your cookie in the file.")
-		fmt.Println("Cookie Format: BDUSS=xxxxxxx")
-		return nil, true
-	} else if needLogin && silence {
-		return nil, true
-	}
-	hasError = false
-	return
-}
-
-type SignTask struct {
-	cookie         *cookiejar.Jar
-	tieba          LikedTieba
-	failedAttempts int
-}
+var maxRetryTimes int
 
 func main() {
-	var maxRetryTimes = flag.Int("retry", 7, "Max retry times for a single tieba")
+	maxRetryTimes = *flag.Int("retry", 4, "Max retry times for a single tieba")
 	flag.Parse()
 
+	go backGroundWork()
+
+	http.Handle("/template/", http.StripPrefix("/template/", http.FileServer(http.Dir("./template"))))
+	http.HandleFunc("/", frontend.HandleIndex)
+	err := http.ListenAndServe(":60080", nil) //设置监听的端口
+	if err != nil {
+		fmt.Println("ListenAndServe: ", err)
+		return
+	}
+}
+
+func backGroundWork() {
 	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	os.Chdir(currentDir)
 
@@ -74,71 +38,30 @@ func main() {
 	fmt.Println("Author: kookxiang <r18@ikk.me>")
 	fmt.Println()
 
-	fmt.Println("Loading and verifying Cookies from ./cookies/")
-	cookieFiles, _ := ioutil.ReadDir("cookies")
-	threadList := sync.WaitGroup{}
-	cookieList := map[string]*cookiejar.Jar{}
-	for _, file := range cookieFiles {
-		profileName := strings.Replace(file.Name(), ".txt", "", 1)
-		cookie, hasError := getCookie("cookies/" + file.Name(), true)
-		if hasError {
-			fmt.Errorf("Failed to load profile %s, invalid cookie!\n", profileName)
-		} else {
-			cookieList[profileName] = cookie
-		}
-	}
-	for profileName, cookie := range cookieList {
-		threadList.Add(1)
-		go func(profileName string, cookie *cookiejar.Jar) {
-			fmt.Printf("[%s] Go routine started.\n", profileName)
-			likedTiebaList, err := GetLikedTiebaList(cookie)
-			if err != nil {
-				fmt.Printf("[%s] Error while fetching tieba list\n", profileName)
-				fmt.Printf("[%s] Go routine stopped.\n", profileName)
-				threadList.Done()
-				return
-			} else {
-				fmt.Printf("[%s] Loaded tieba list.\n", profileName)
-			}
-			taskList := list.New()
-			for _, tieba := range likedTiebaList {
-				taskList.PushBack(SignTask{
-					tieba:          tieba,
-					cookie:         cookie,
-					failedAttempts: 0,
-				})
-			}
-			for {
-				taskNode := taskList.Front()
-				if taskNode == nil {
-					break
-				}
-				taskList.Remove(taskNode)
-				task := taskNode.Value.(SignTask)
-				status, s, exp := TiebaSign(task.tieba, task.cookie)
-				if status == 2 {
-					if exp > 0 {
-						fmt.Printf(s + " [%s] Succeed: %s, Exp +%d\n", profileName, ToUtf8(task.tieba.Name), exp)
-					} else {
-						fmt.Printf(s + " [%s] Succeed: %s\n", profileName, ToUtf8(task.tieba.Name))
-					}
-				} else if status == 1 {
-					fmt.Printf(s + " [%s] Failed1:  %s\n", profileName, ToUtf8(task.tieba.Name))
-					task.failedAttempts++
-					if task.failedAttempts <= *maxRetryTimes {
-						taskList.PushBack(task) // push failed task back to list
-					}
-					time.Sleep(2e9)
-				} else {
-					fmt.Printf(s + " [%s] Failed2:  %s\n", profileName, ToUtf8(task.tieba.Name))
-				}
-			}
-			fmt.Printf("[%s] Finished!\n", profileName)
-			fmt.Printf("[%s] Go routine stopped.\n", profileName)
-			threadList.Done()
-		}(profileName, cookie)
+	conf.StartCookiesWork(CookieList, ErrorList)
+	TiebaSign.StartSign(CookieList, RunList, maxRetryTimes)
+	for {
+		t := time.Now()
+		if t.Minute() == 30 {
+			currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+			os.Chdir(currentDir)
 
-		threadList.Wait()
-		fmt.Println("All Task Finished! Congratulation!")
+			fmt.Println("Tieba Sign (Go Version) beta")
+			fmt.Println("Author: kookxiang <r18@ikk.me>")
+			fmt.Println()
+			if t.Hour() == 0 {
+				for k := range RunList {
+					delete(RunList, k)
+				}
+			}
+			if t.Hour()%3 == 0 {
+				conf.StartCookiesWork(CookieList, ErrorList)
+			}
+			TiebaSign.StartSign(CookieList, RunList, maxRetryTimes)
+			time.Sleep(1 * time.Minute)
+		} else {
+			time.Sleep(1 * time.Second)
+		}
+
 	}
 }
