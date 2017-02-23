@@ -1,1 +1,0 @@
-<a href="{{.Url}}" class="w3-padding"><i class="fa fa-users fa-fw"></i>  {{.Name}}</a>
