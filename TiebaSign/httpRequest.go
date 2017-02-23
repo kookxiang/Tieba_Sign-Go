@@ -49,3 +49,8 @@ func GetCookie(cookieJar *cookiejar.Jar, name string) string {
 	return ""
 }
 
+func GetCookies(cookieJar *cookiejar.Jar) []*http.Cookie {
+	cookieUrl, _ := url.Parse("http://tieba.baidu.com")
+	cookies := cookieJar.Cookies(cookieUrl)
+	return cookies
+}
