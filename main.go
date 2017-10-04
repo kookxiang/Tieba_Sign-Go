@@ -1,7 +1,7 @@
 package main
 
 import (
-	. "./TiebaSign"
+	. "github.com/kookxiang/Tieba_Sign-Go/TiebaSign"
 	"bytes"
 	"container/list"
 	"flag"
@@ -145,7 +145,7 @@ func main() {
 			threadList.Add(1)
 			go func(profileName string, cookie *cookiejar.Jar) {
 				fmt.Printf("[%s] Go routine started.\n", profileName)
-				likedTiebaList, err := GetLikedTiebaList(cookie)
+				likedTiebaList, err := GetLikedTiebaListNew(cookie)
 				if err != nil {
 					fmt.Printf("[%s] Error while fetching tieba list\n", profileName)
 					fmt.Printf("[%s] Go routine stopped.\n", profileName)
@@ -172,18 +172,18 @@ func main() {
 					status, _, exp := TiebaSign(task.tieba, task.cookie)
 					if status == 2 {
 						if exp > 0 {
-							fmt.Printf("[%s] Succeed: %s, Exp +%d\n", profileName, ToUtf8(task.tieba.Name), exp)
+							fmt.Printf("[%s] Succeed: %s, Exp +%d\n", profileName, task.tieba.Name, exp)
 						} else {
-							fmt.Printf("[%s] Succeed: %s\n", profileName, ToUtf8(task.tieba.Name))
+							fmt.Printf("[%s] Succeed: %s\n", profileName, task.tieba.Name)
 						}
 					} else if status == 1 {
-						fmt.Printf("[%s] Failed:  %s\n", profileName, ToUtf8(task.tieba.Name))
+						fmt.Printf("[%s] Failed:  %s\n", profileName, task.tieba.Name)
 						task.failedAttempts++
 						if task.failedAttempts <= *maxRetryTimes {
 							taskList.PushBack(task) // push failed task back to list
 						}
 					} else {
-						fmt.Printf("[%s] Failed:  %s\n", profileName, ToUtf8(task.tieba.Name))
+						fmt.Printf("[%s] Failed:  %s\n", profileName, task.tieba.Name)
 					}
 					if exp > 0 || status == 1 {
 						time.Sleep(2e9)

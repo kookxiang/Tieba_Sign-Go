@@ -3,6 +3,7 @@ package TiebaSign
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	. "github.com/bitly/go-simplejson"
 	"io/ioutil"
@@ -11,7 +12,36 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
+
+//get baidu username
+func GetBaiduIdName(ptrCookieJar *cookiejar.Jar) string {
+
+	url := "http://wapp.baidu.com/"
+	body, fetchErr := Fetch(url, nil, ptrCookieJar)
+	if fetchErr != nil {
+		fmt.Println(fetchErr)
+		return ""
+	}
+	exp := regexp.MustCompile("<a href=.+?>(.*?)的i贴吧</a>")
+	Exp := exp.FindStringSubmatch(string(body))[1]
+	return Exp
+}
+
+//get baidu uid
+func getBaiduUID(ptrCookieJar *cookiejar.Jar, username string) string {
+	url := "http://tieba.baidu.com/home/get/panel?ie=utf-8&un=" + username
+	body, fetchErr := Fetch(url, nil, ptrCookieJar)
+	if fetchErr != nil {
+		fmt.Println(fetchErr)
+		return ""
+	}
+	data := map[string]interface{}{}
+	json.Unmarshal([]byte(string(body)), &data)
+	uid := strconv.FormatFloat(data["data"].(map[string]interface{})["id"].(float64), 'f', -1, 64)
+	return uid
+}
 
 func GetBaiduID(ptrCookieJar *cookiejar.Jar) string {
 	baiduID := getBaiduID(ptrCookieJar)
@@ -104,6 +134,69 @@ func BaiduLoginWithCaptcha(username, password string, ptrCookieJar *cookiejar.Ja
 	}
 
 	return 1, nil
+}
+
+func GetLikedTiebaListNew(ptrCookieJar *cookiejar.Jar) ([]LikedTieba, error) {
+	pn := 0
+	likedTiebaList := make([]LikedTieba, 0)
+	username := GetBaiduIdName(ptrCookieJar)
+	for {
+		pn++
+		pnstr := fmt.Sprintf("%d", pn)
+		t := time.Now()
+		postData := make(map[string]string)
+		postData["page_no"] = pnstr
+		postData["_client_id"] = "wappc_" + string(t.Unix()) + "233"
+		postData["_client_type"] = "2"
+		postData["_client_version"] = "6.5.8"
+		postData["_phone_imei"] = "357143042411618"
+		postData["from"] = "baidu_appstore"
+		postData["is_guest"] = "1"
+		postData["model"] = "H60-L01"
+		postData["page_size"] = "200"
+		postData["timestamp"] = string(t.Unix()) + "903"
+		postData["uid"] = getBaiduUID(ptrCookieJar, username)
+		var keys []string
+		for key, _ := range postData {
+			keys = append(keys, key)
+		}
+		sort.Sort(sort.StringSlice(keys))
+
+		sign_str := ""
+		for _, key := range keys {
+			sign_str += fmt.Sprintf("%s=%s", key, postData[key])
+		}
+		sign_str += "tiebaclient!!!"
+
+		MD5 := md5.New()
+		MD5.Write([]byte(sign_str))
+		MD5Result := MD5.Sum(nil)
+		signValue := make([]byte, 32)
+		hex.Encode(signValue, MD5Result)
+		postData["sign"] = strings.ToUpper(string(signValue))
+
+		var url = "http://c.tieba.baidu.com/c/f/forum/like"
+
+		body, fetchErr := Fetch(url, postData, ptrCookieJar)
+		if fetchErr != nil {
+			return nil, fetchErr
+		}
+		data := map[string]interface{}{}
+		json.Unmarshal([]byte(string(body)), &data)
+
+		typeit := fmt.Sprintf("%T", data["forum_list"])
+		if typeit == "[]interface {}" || data["forum_list"] == nil {
+			break
+		}
+
+		list, err := ParseLikedTiebaNew(data["forum_list"].(map[string]interface{}))
+		likedTiebaList = append(likedTiebaList, list...)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+	}
+	return likedTiebaList, nil
 }
 
 func GetLikedTiebaList(ptrCookieJar *cookiejar.Jar) ([]LikedTieba, error) {

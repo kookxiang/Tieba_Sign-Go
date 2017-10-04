@@ -33,3 +33,18 @@ func ParseLikedTieba(html string) (LikedTieba, error) {
 	likedTieba.TiebaId, _ = strconv.Atoi(exp.FindStringSubmatch(html)[1])
 	return likedTieba, nil
 }
+
+func ParseLikedTiebaNew(tiebalist map[string]interface{}) ([]LikedTieba, error) {
+	likedTieba := LikedTieba{}
+	likedTiebaList := make([]LikedTieba, 0)
+	list := tiebalist["non-gconforum"].([]interface{})
+	for _, v := range list {
+		tieba := v.(map[string]interface{})
+		likedTieba.Name = tieba["name"].(string)
+		likedTieba.UnicodeName = ToUtf8(tieba["name"].(string))
+		likedTieba.TiebaId, _ = tieba["id"].(int)
+		likedTieba.Exp, _ = tieba["cur_score"].(int)
+		likedTiebaList = append(likedTiebaList, likedTieba)
+	}
+	return likedTiebaList, nil
+}
